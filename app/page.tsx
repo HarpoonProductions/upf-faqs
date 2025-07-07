@@ -1,45 +1,27 @@
-// app/page.tsx - UPF Homepage with Server-Side Rendering
+// app/page.tsx - Simple working version
+'use client'
 
-import groq from 'groq'
+import { useState, useEffect } from 'react'
 import { client } from '@/lib/sanity'
-import HomePage from '@/components/HomePage'
+import groq from 'groq'
 
-// Type definitions
-export interface FAQ {
-  _id: string;
-  question: string;
-  slug: { current: string };
-  summaryForAI?: string;
-  keywords?: string[];
-  category?: { title: string };
-  image?: {
-    asset?: {
-      url: string;
-    };
-    alt?: string;
-  };
-  publishedAt?: string;
-}
+export default function HomePage() {
+  const [faqs, setFaqs] = useState([])
 
-export default async function Page() {
-  // Server-side data fetching
-  const faqs: FAQ[] = await client.fetch(groq`*[_type == "faq" && defined(slug.current)] | order(publishedAt desc, _createdAt desc)[0...10] {
-    _id,
-    question,
-    slug,
-    summaryForAI,
-    keywords,
-    category->{
-      title
-    },
-    image {
-      asset -> {
-        url
-      },
-      alt
-    },
-    publishedAt
-  }`);
+  useEffect(() => {
+    client.fetch(groq`*[_type == "faq"][0...5]{_id, question, slug}`)
+      .then(setFaqs)
+      .catch(console.error)
+  }, [])
 
-  return <HomePage faqs={faqs} />;
+  return (
+    <div>
+      <h1>UPF FAQs</h1>
+      {faqs.map(faq => (
+        <div key={faq._id}>
+          <h2>{faq.question}</h2>
+        </div>
+      ))}
+    </div>
+  )
 }
