@@ -5,7 +5,7 @@ export const client = createClient({
   projectId: 'shxuue68',
   dataset: 'production',
   useCdn: true,
-  apiVersion: '2024-06-01',
+  apiVersion: '2023-05-03',
 })
 
 // Export for legacy compatibility
