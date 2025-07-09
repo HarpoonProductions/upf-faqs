@@ -1,4 +1,4 @@
-// app/faqs/[slug]/page.tsx - UPF Individual FAQ page with CORRECTED SYNTAX
+// app/faqs/[slug]/page.tsx - FIXED UPF Individual FAQ page with consistent image handling
 
 'use client'
 
@@ -23,7 +23,7 @@ interface Author {
     website?: string
   }
   image?: {
-    asset: { url: string }
+    asset?: { url: string }
     alt?: string
   }
 }
@@ -48,7 +48,7 @@ interface Faq {
   updatedAt?: string
   author: Author
   image?: {
-    asset: { url: string }
+    asset?: { url: string }
     alt?: string
     caption?: string
   }
@@ -64,7 +64,7 @@ interface SiteSettings {
   description: string
   url: string
   logo?: {
-    asset: { url: string }
+    asset?: { url: string }
     alt?: string
   }
   organization: {
@@ -84,7 +84,7 @@ interface SiteSettings {
   }
 }
 
-// Enhanced queries
+// FIXED: Enhanced queries with proper image asset references
 const faqQuery = groq`*[_type == "faq" && slug.current == $slug][0] {
   _id,
   question,
@@ -103,7 +103,14 @@ const faqQuery = groq`*[_type == "faq" && slug.current == $slug][0] {
     question,
     slug,
     summaryForAI,
-    image,
+    image {
+      asset->{
+        _id,
+        url
+      },
+      alt,
+      caption
+    },
     category->{
       title,
       slug
@@ -118,9 +125,22 @@ const faqQuery = groq`*[_type == "faq" && slug.current == $slug][0] {
     jobTitle,
     expertise,
     socialMedia,
-    image
+    image {
+      asset->{
+        _id,
+        url
+      },
+      alt
+    }
   },
-  image,
+  image {
+    asset->{
+      _id,
+      url
+    },
+    alt,
+    caption
+  },
   seo,
   customSchemaMarkup
 }`
@@ -129,7 +149,13 @@ const siteSettingsQuery = groq`*[_type == "siteSettings"][0] {
   title,
   description,
   url,
-  logo,
+  logo {
+    asset->{
+      _id,
+      url
+    },
+    alt
+  },
   organization,
   socialMedia,
   searchAction
@@ -141,7 +167,12 @@ const relatedQuery = groq`*[_type == "faq" && _id != $currentId && (category._re
   slug,
   summaryForAI,
   image {
-    asset->{ url }
+    asset->{
+      _id,
+      url
+    },
+    alt,
+    caption
   },
   category->{
     title,
@@ -156,6 +187,29 @@ const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && define
   slug,
   summaryForAI
 }`
+
+// FIXED: Universal image URL function that works across all sites
+const getImageUrl = (image: any, width?: number, height?: number, fallback = '/fallback.jpg') => {
+  // Check if we have image data
+  if (!image?.asset?.url) {
+    return fallback;
+  }
+
+  // Try urlFor transformation first
+  try {
+    if (width && height) {
+      return urlFor(image).width(width).height(height).fit('crop').url();
+    } else if (width) {
+      return urlFor(image).width(width).url();
+    } else {
+      return urlFor(image).url();
+    }
+  } catch (error) {
+    console.warn('urlFor failed, using raw URL:', error);
+    // Fallback to raw URL if urlFor fails
+    return image.asset.url;
+  }
+};
 
 // Search Component - Orange themed for UPF
 interface SearchFAQ {
@@ -314,7 +368,7 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
 interface CitationBoxProps {
   question: string;
   url: string;
-  theme?: 'blue' | 'orange';
+  theme?: 'blue' | 'orange' | 'purple';
 }
 
 const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
@@ -336,6 +390,14 @@ const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
       iconText: 'text-orange-600',
       titleText: 'text-orange-900',
       linkText: 'text-orange-600 hover:text-orange-700'
+    },
+    purple: {
+      bg: 'from-purple-50 to-indigo-50',
+      border: 'border-purple-200',
+      iconBg: 'bg-purple-100',
+      iconText: 'text-purple-600',
+      titleText: 'text-purple-900',
+      linkText: 'text-purple-600 hover:text-purple-700'
     }
   };
 
@@ -399,7 +461,7 @@ const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
             </span>
           </h3>
           <p className="text-sm text-slate-700 leading-relaxed">
-            "{question}." <em className="font-medium">UPF FAQs</em>. Available at:{' '}
+            &quot;{question}.&quot; <em className="font-medium">UPF FAQs</em>. Available at:{' '}
             <span className={`${colors.linkText} underline decoration-2 underline-offset-2 transition-colors duration-200 break-all`}>
               {url}
             </span>
@@ -483,7 +545,7 @@ export default function FaqPage({ params }: FaqPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-600">Loading...</p>
@@ -554,7 +616,7 @@ export default function FaqPage({ params }: FaqPageProps) {
         }}
       />
 
-      {/* Header Section with PNG Logo - Matching Homepage exactly */}
+      {/* Header Section - Matching Homepage exactly */}
       <div className="pt-16 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto text-center" style={{ maxWidth: '1600px' }}>
           <Link href="/" className="inline-block">
@@ -577,7 +639,7 @@ export default function FaqPage({ params }: FaqPageProps) {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Updated with proper breadcrumbs */}
       <div className="mx-auto px-4 sm:px-6 lg:px-8 mb-8" style={{ maxWidth: '1600px' }}>
         <div className="flex items-center gap-4 text-sm">
           <Link 
@@ -587,7 +649,7 @@ export default function FaqPage({ params }: FaqPageProps) {
             <svg className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to homepage
+            Back to hub
           </Link>
           <span className="text-slate-400">•</span>
           <Link 
@@ -602,14 +664,17 @@ export default function FaqPage({ params }: FaqPageProps) {
       {/* Main Content - Flex grow to push footer down */}
       <main className="flex-grow mx-auto px-4 sm:px-6 lg:px-8 pb-16" style={{ maxWidth: '1600px' }}>
         <article className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden mb-12">
-          {/* Hero Image with Question Overlay */}
+          {/* FIXED: Hero Image with Question Overlay */}
           {faq.image?.asset?.url && (
             <div className="relative h-80 md:h-96 overflow-hidden">
               <Image
-                src={urlFor(faq.image).width(1200).height(600).fit('crop').url()}
+                src={getImageUrl(faq.image, 1200, 600)}
                 alt={faq.image.alt || faq.question}
                 fill
                 className="object-cover"
+                onError={(e) => {
+                  console.error('Main image failed to load');
+                }}
               />
               
               {/* Dark gradient overlay for text readability */}
@@ -647,17 +712,20 @@ export default function FaqPage({ params }: FaqPageProps) {
               </div>
             )}
 
-            {/* Author and Metadata */}
+            {/* FIXED: Author and Metadata */}
             {faq.author && (
               <div className="flex items-center gap-4 text-sm text-slate-600 mb-6">
                 <div className="flex items-center gap-2">
-                  {faq.author.image && (
+                  {faq.author.image?.asset?.url && (
                     <Image
-                      src={urlFor(faq.author.image).width(32).height(32).url()}
+                      src={getImageUrl(faq.author.image, 32, 32)}
                       alt={faq.author.name}
                       width={32}
                       height={32}
                       className="rounded-full"
+                      onError={(e) => {
+                        console.error('Author image failed to load');
+                      }}
                     />
                   )}
                   <span>By {faq.author.name}</span>
@@ -715,7 +783,7 @@ export default function FaqPage({ params }: FaqPageProps) {
           </div>
         </article>
 
-        {/* Related Questions - Enhanced with better related logic */}
+        {/* FIXED: Related Questions - Enhanced with better related logic */}
         {relatedFaqs?.length > 0 && (
           <section>
             <div className="text-center mb-12">
@@ -725,9 +793,7 @@ export default function FaqPage({ params }: FaqPageProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {relatedFaqs.map((related) => {
-                const imageUrl = related.image?.asset?.url
-                  ? urlFor(related.image).width(500).height(300).fit('crop').url()
-                  : '/fallback.jpg'
+                const imageUrl = getImageUrl(related.image, 500, 300);
 
                 return (
                   <Link
@@ -742,6 +808,9 @@ export default function FaqPage({ params }: FaqPageProps) {
                         alt={related.question}
                         fill
                         className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-75"
+                        onError={(e) => {
+                          console.error('Related FAQ image failed to load');
+                        }}
                       />
                       
                       {/* Dark gradient overlay */}
@@ -790,7 +859,7 @@ export default function FaqPage({ params }: FaqPageProps) {
         )}
       </main>
 
-      {/* Standardized Footer with "Powered by Upsum" */}
+      {/* Footer with "Powered by Upsum" - Now sticky to bottom */}
       <footer className="bg-orange-50 border-t border-orange-200 py-6 mt-auto">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 text-center" style={{ maxWidth: '1600px' }}>
           <div className="flex items-center justify-center gap-2 text-slate-500 text-sm mb-2">
@@ -803,13 +872,13 @@ export default function FaqPage({ params }: FaqPageProps) {
               className="opacity-70"
             />
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-orange-400">
             Upsum is a trademark of{' '}
             <a 
               href="https://harpoon.productions" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="hover:text-slate-600 transition-colors duration-200"
+              className="hover:text-orange-600 transition-colors duration-200"
             >
               Harpoon Productions
             </a>
@@ -819,4 +888,3 @@ export default function FaqPage({ params }: FaqPageProps) {
     </div>
   )
 }
-//push//
