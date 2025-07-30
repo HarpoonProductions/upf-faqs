@@ -1,4 +1,4 @@
-// app/faqs/[slug]/page.tsx - FIXED UPF Individual FAQ page with consistent image handling
+// app/faqs/[slug]/page.tsx - Updated with clickable tags and authors
 
 'use client'
 
@@ -84,7 +84,7 @@ interface SiteSettings {
   }
 }
 
-// FIXED: Enhanced queries with proper image asset references
+// Enhanced queries with proper image asset references
 const faqQuery = groq`*[_type == "faq" && slug.current == $slug][0] {
   _id,
   question,
@@ -188,14 +188,12 @@ const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && define
   summaryForAI
 }`
 
-// FIXED: Universal image URL function that works across all sites
+// Universal image URL function that works across all sites
 const getImageUrl = (image: any, width?: number, height?: number, fallback = '/fallback.jpg') => {
-  // Check if we have image data
   if (!image?.asset?.url) {
     return fallback;
   }
 
-  // Try urlFor transformation first
   try {
     if (width && height) {
       return urlFor(image).width(width).height(height).fit('crop').url();
@@ -206,7 +204,6 @@ const getImageUrl = (image: any, width?: number, height?: number, fallback = '/f
     }
   } catch (error) {
     console.warn('urlFor failed, using raw URL:', error);
-    // Fallback to raw URL if urlFor fails
     return image.asset.url;
   }
 };
@@ -223,13 +220,10 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Search logic with null safety
   const searchResults = useMemo(() => {
     if (!query.trim() || query.length < 2) return [];
     
     const searchTerm = query.toLowerCase();
-    
-    // Filter out FAQs with null/invalid slugs BEFORE searching
     const validFaqs = searchFAQs.filter(faq => 
       faq && 
       faq.slug && 
@@ -240,10 +234,9 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
     return validFaqs.filter(faq => 
       faq.question.toLowerCase().includes(searchTerm) ||
       faq.summaryForAI?.toLowerCase().includes(searchTerm)
-    ).slice(0, 5); // Show max 5 results
+    ).slice(0, 5);
   }, [query, searchFAQs]);
 
-  // Highlight search terms
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm || !text) return text;
     
@@ -257,7 +250,6 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
 
   return (
     <div className="relative max-w-xl mx-auto">
-      {/* Search Input */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,22 +282,19 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
         )}
       </div>
 
-      {/* Search Results Dropdown */}
       {isOpen && query.length >= 2 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-slate-200 z-50 max-h-80 overflow-y-auto">
           {searchResults.length > 0 ? (
             <>
-              {/* Results Header */}
               <div className="px-4 py-2 border-b border-slate-100">
                 <p className="text-xs font-medium text-slate-700">
                   Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                 </p>
               </div>
               
-              {/* Results List */}
               <div className="py-1">
                 {searchResults
-                  .filter(faq => faq && faq.slug && faq.slug.current && faq.question) // Double safety check
+                  .filter(faq => faq && faq.slug && faq.slug.current && faq.question)
                   .map((faq) => (
                   <Link
                     key={faq._id}
@@ -337,7 +326,6 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
               </div>
             </>
           ) : (
-            /* No Results */
             <div className="px-4 py-6 text-center">
               <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2">
                 <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +341,6 @@ const FAQPageSearch = ({ searchFAQs }: { searchFAQs: SearchFAQ[] }) => {
         </div>
       )}
 
-      {/* Click outside to close */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-40" 
@@ -402,7 +389,6 @@ const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
   };
 
   const colors = themeColors[theme];
-
   const citationText = `"${question}." UPF FAQs. Available at: ${url}`;
 
   const handleCopyClick = async () => {
@@ -412,7 +398,6 @@ const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy citation:', err);
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = citationText;
       document.body.appendChild(textArea);
@@ -474,7 +459,6 @@ const CitationBox = ({ question, url, theme = 'orange' }: CitationBoxProps) => {
         </div>
       </div>
       
-      {/* Success animation overlay */}
       {copied && (
         <div className="absolute inset-0 rounded-2xl bg-green-100/50 flex items-center justify-center pointer-events-none">
           <div className="bg-white rounded-full p-3 shadow-lg">
@@ -500,7 +484,6 @@ export default function FaqPage({ params }: FaqPageProps) {
   const [searchFAQs, setSearchFAQs] = useState<SearchFAQ[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Resolve params and fetch data
   useEffect(() => {
     params.then(resolvedParams => {
       setSlug(resolvedParams.slug);
@@ -510,7 +493,6 @@ export default function FaqPage({ params }: FaqPageProps) {
 
   const fetchFaqData = async (faqSlug: string) => {
     try {
-      // Fetch FAQ, site settings, and search FAQs
       const [faqData, siteSettingsData, searchFAQsData] = await Promise.allSettled([
         client.fetch(faqQuery, { slug: faqSlug }),
         client.fetch(siteSettingsQuery),
@@ -526,7 +508,6 @@ export default function FaqPage({ params }: FaqPageProps) {
       setSiteSettings(siteSettingsData.status === 'fulfilled' ? siteSettingsData.value : null);
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
-      // Fetch related FAQs if keywords/category exist
       if (faqData.value.keywords?.length || faqData.value.category) {
         const related: Faq[] = await client.fetch(relatedQuery, { 
           currentId: faqData.value._id,
@@ -616,7 +597,7 @@ export default function FaqPage({ params }: FaqPageProps) {
         }}
       />
 
-      {/* Header Section - Matching Homepage exactly */}
+      {/* Header Section */}
       <div className="pt-16 pb-8 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto text-center" style={{ maxWidth: '1600px' }}>
           <Link href="/" className="inline-block">
@@ -632,14 +613,13 @@ export default function FaqPage({ params }: FaqPageProps) {
             Quick answers to your ultra-processed food questions
           </p>
           
-          {/* Search Box */}
           <div className="mb-6">
             <FAQPageSearch searchFAQs={searchFAQs} />
           </div>
         </div>
       </div>
 
-      {/* Navigation - Updated with proper breadcrumbs */}
+      {/* Navigation */}
       <div className="mx-auto px-4 sm:px-6 lg:px-8 mb-8" style={{ maxWidth: '1600px' }}>
         <div className="flex items-center gap-4 text-sm">
           <Link 
@@ -661,10 +641,10 @@ export default function FaqPage({ params }: FaqPageProps) {
         </div>
       </div>
 
-      {/* Main Content - Flex grow to push footer down */}
+      {/* Main Content */}
       <main className="flex-grow mx-auto px-4 sm:px-6 lg:px-8 pb-16" style={{ maxWidth: '1600px' }}>
         <article className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden mb-12">
-          {/* FIXED: Hero Image with Question Overlay */}
+          {/* Hero Image with Question Overlay */}
           {faq.image?.asset?.url && (
             <div className="relative h-80 md:h-96 overflow-hidden">
               <Image
@@ -677,10 +657,8 @@ export default function FaqPage({ params }: FaqPageProps) {
                 }}
               />
               
-              {/* Dark gradient overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
-              {/* Question overlay */}
               <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
                 <div className="mb-4">
                   <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium">
@@ -712,7 +690,7 @@ export default function FaqPage({ params }: FaqPageProps) {
               </div>
             )}
 
-            {/* FIXED: Author and Metadata */}
+            {/* UPDATED: Author and Metadata with clickable author */}
             {faq.author && (
               <div className="flex items-center gap-4 text-sm text-slate-600 mb-6">
                 <div className="flex items-center gap-2">
@@ -728,7 +706,14 @@ export default function FaqPage({ params }: FaqPageProps) {
                       }}
                     />
                   )}
-                  <span>By {faq.author.name}</span>
+                  <span>By </span>
+                  {/* NEW: Clickable author name */}
+                  <Link 
+                    href={`/authors/${faq.author.slug.current}`} 
+                    className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200 hover:underline"
+                  >
+                    {faq.author.name}
+                  </Link>
                   {faq.author.jobTitle && (
                     <span className="text-slate-400">• {faq.author.jobTitle}</span>
                   )}
@@ -757,24 +742,25 @@ export default function FaqPage({ params }: FaqPageProps) {
               <PortableText value={faq.answer} />
             </div>
 
-            {/* Keywords/Tags */}
+            {/* UPDATED: Keywords/Tags - Now clickable */}
             {faq.keywords && faq.keywords.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-sm font-medium text-slate-500 mb-2">Topics:</h3>
                 <div className="flex flex-wrap gap-2">
                   {faq.keywords.map((keyword, index) => (
-                    <span
+                    <Link
                       key={index}
-                      className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded text-sm"
+                      href={`/tags/${encodeURIComponent(keyword.toLowerCase().replace(/\s+/g, '-'))}`}
+                      className="inline-block bg-orange-100 text-orange-700 px-3 py-1.5 rounded-full text-sm hover:bg-orange-200 hover:text-orange-800 transition-colors duration-200 font-medium"
                     >
-                      {keyword}
-                    </span>
+                      #{keyword}
+                    </Link>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Clickable Citation Box - Orange theme for UPF */}
+            {/* Clickable Citation Box */}
             <CitationBox 
               question={faq.question}
               url={faqUrl}
@@ -783,7 +769,7 @@ export default function FaqPage({ params }: FaqPageProps) {
           </div>
         </article>
 
-        {/* FIXED: Related Questions - Enhanced with better related logic */}
+        {/* Related Questions */}
         {relatedFaqs?.length > 0 && (
           <section>
             <div className="text-center mb-12">
@@ -801,7 +787,6 @@ export default function FaqPage({ params }: FaqPageProps) {
                     href={`/faqs/${related.slug.current}`}
                     className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden"
                   >
-                    {/* Image with overlay - matching front page style */}
                     <div className="relative h-64 overflow-hidden">
                       <Image
                         src={imageUrl}
@@ -813,10 +798,8 @@ export default function FaqPage({ params }: FaqPageProps) {
                         }}
                       />
                       
-                      {/* Dark gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                       
-                      {/* Text overlay */}
                       <div className="absolute inset-0 p-6 flex flex-col justify-end">
                         <div className="mb-3">
                           <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium">
@@ -829,7 +812,6 @@ export default function FaqPage({ params }: FaqPageProps) {
                         </h4>
                       </div>
                       
-                      {/* Hover indicator */}
                       <div className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -837,7 +819,6 @@ export default function FaqPage({ params }: FaqPageProps) {
                       </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-6">
                       {related.summaryForAI && (
                         <p className="text-slate-600 leading-relaxed line-clamp-3 mb-4">
@@ -859,7 +840,7 @@ export default function FaqPage({ params }: FaqPageProps) {
         )}
       </main>
 
-      {/* Footer with "Powered by Upsum" - Now sticky to bottom */}
+      {/* Footer */}
       <footer className="bg-orange-50 border-t border-orange-200 py-6 mt-auto">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 text-center" style={{ maxWidth: '1600px' }}>
           <div className="flex items-center justify-center gap-2 text-slate-500 text-sm mb-2">
