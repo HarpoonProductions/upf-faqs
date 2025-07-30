@@ -494,9 +494,9 @@ export default function FaqPage({ params }: FaqPageProps) {
   const fetchFaqData = async (faqSlug: string) => {
     try {
       const [faqData, siteSettingsData, searchFAQsData] = await Promise.allSettled([
-        client.fetch(faqQuery, { slug: faqSlug }),
-        client.fetch(siteSettingsQuery),
-        client.fetch(searchFAQsQuery)
+        client.fetch<Faq>(faqQuery, { slug: faqSlug } as FaqQueryParams),
+        client.fetch<SiteSettings>(siteSettingsQuery),
+        client.fetch<SearchFAQ[]>(searchFAQsQuery)
       ]);
 
       if (faqData.status !== 'fulfilled' || !faqData.value) {
@@ -509,11 +509,11 @@ export default function FaqPage({ params }: FaqPageProps) {
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
       if (faqData.value.keywords?.length || faqData.value.category) {
-        const related: Faq[] = await client.fetch(relatedQuery, { 
+        const related: Faq[] = await client.fetch<Faq[]>(relatedQuery, { 
           currentId: faqData.value._id,
           categoryRef: faqData.value.category?._id,
           keywords: faqData.value.keywords || []
-        });
+        } as RelatedQueryParams);
         setRelatedFaqs(related);
       }
       

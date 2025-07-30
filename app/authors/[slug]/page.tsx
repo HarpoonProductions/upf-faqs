@@ -89,6 +89,15 @@ const authorFaqsQuery = groq`*[_type == "faq" && author._ref == $authorId && def
   publishedAt
 }`;
 
+// Type for query parameters
+interface AuthorQueryParams {
+  slug: string;
+}
+
+interface AuthorFaqsQueryParams {
+  authorId: string;
+}
+
 // Search FAQs query for the search box
 const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && defined(question)] {
   _id,
@@ -274,8 +283,8 @@ export default function AuthorPage({ params }: AuthorPageProps) {
   const fetchAuthorData = async (authorSlug: string) => {
     try {
       const [authorData, searchFAQsData] = await Promise.allSettled([
-        client.fetch(authorQuery, { slug: authorSlug }),
-        client.fetch(searchFAQsQuery)
+        client.fetch<Author>(authorQuery, { slug: authorSlug } as AuthorQueryParams),
+        client.fetch<SearchFAQ[]>(searchFAQsQuery)
       ]);
 
       if (authorData.status !== 'fulfilled' || !authorData.value) {
@@ -287,9 +296,9 @@ export default function AuthorPage({ params }: AuthorPageProps) {
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
       // Fetch author's FAQs
-      const authorFaqs = await client.fetch(authorFaqsQuery, { 
+      const authorFaqs = await client.fetch<FAQ[]>(authorFaqsQuery, { 
         authorId: authorData.value._id
-      });
+      } as AuthorFaqsQueryParams);
       setFaqs(authorFaqs || []);
       
       setLoading(false);
