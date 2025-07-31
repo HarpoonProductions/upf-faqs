@@ -61,43 +61,6 @@ interface AuthorFaqsQueryParams {
   authorId: string;
 }
 
-// Query to get author details
-const authorQuery = groq`*[_type == "author" && slug.current == $slug][0] {
-  _id,
-  name,
-  slug,
-  jobTitle,
-  bio,
-  expertise,
-  socialMedia,
-  image {
-    asset->{
-      _id,
-      url
-    },
-    alt
-  }
-}`;
-
-// Query to get FAQs by this author
-const authorFaqsQuery = groq`*[_type == "faq" && author._ref == $authorId && defined(slug.current)] | order(publishedAt desc, _createdAt desc) {
-  _id,
-  question,
-  slug,
-  summaryForAI,
-  keywords,
-  category->{
-    title
-  },
-  image {
-    asset -> {
-      url
-    },
-    alt
-  },
-  publishedAt
-}`;
-
 // Search FAQs query for the search box
 const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && defined(question)] {
   _id,
@@ -282,8 +245,26 @@ export default function AuthorPage({ params }: AuthorPageProps) {
 
   const fetchAuthorData = async (authorSlug: string) => {
     try {
+      // Use string interpolation to avoid TypeScript parameter issues
+      const authorQueryDynamic = `*[_type == "author" && slug.current == "${authorSlug}"][0] {
+        _id,
+        name,
+        slug,
+        jobTitle,
+        bio,
+        expertise,
+        socialMedia,
+        image {
+          asset->{
+            _id,
+            url
+          },
+          alt
+        }
+      }`;
+
       const [authorData, searchFAQsData] = await Promise.allSettled([
-        client.fetch(authorQuery, { slug: authorSlug }),
+        client.fetch(authorQueryDynamic),
         client.fetch(searchFAQsQuery)
       ]);
 
@@ -295,10 +276,26 @@ export default function AuthorPage({ params }: AuthorPageProps) {
       setAuthor(authorData.value);
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
-      // Fetch author's FAQs
-      const authorFaqs = await client.fetch(authorFaqsQuery, { 
-        authorId: authorData.value._id
-      });
+      // Fetch author's FAQs using the author ID
+      const authorFaqsQueryDynamic = `*[_type == "faq" && author._ref == "${authorData.value._id}" && defined(slug.current)] | order(publishedAt desc, _createdAt desc) {
+        _id,
+        question,
+        slug,
+        summaryForAI,
+        keywords,
+        category->{
+          title
+        },
+        image {
+          asset -> {
+            url
+          },
+          alt
+        },
+        publishedAt
+      }`;
+
+      const authorFaqs = await client.fetch(authorFaqsQueryDynamic);
       setFaqs(authorFaqs || []);
       
       setLoading(false);

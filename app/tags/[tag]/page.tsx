@@ -42,29 +42,6 @@ interface TagQueryParams {
   tag: string;
 }
 
-// Query to get FAQs by tag/keyword
-const tagFaqsQuery = groq`*[_type == "faq" && $tag in keywords[] && defined(slug.current)] | order(publishedAt desc, _createdAt desc) {
-  _id,
-  question,
-  slug,
-  summaryForAI,
-  keywords,
-  category->{
-    title
-  },
-  image {
-    asset -> {
-      url
-    },
-    alt
-  },
-  publishedAt,
-  author->{
-    name,
-    slug
-  }
-}`;
-
 // Search FAQs query for the search box
 const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && defined(question)] {
   _id,
@@ -255,8 +232,31 @@ export default function TagPage({ params }: TagPageProps) {
 
   const fetchTagData = async (tagName: string) => {
     try {
+      // Use string interpolation instead of parameters to avoid TypeScript issues
+      const tagQuery = `*[_type == "faq" && "${tagName}" in keywords[] && defined(slug.current)] | order(publishedAt desc, _createdAt desc) {
+        _id,
+        question,
+        slug,
+        summaryForAI,
+        keywords,
+        category->{
+          title
+        },
+        image {
+          asset -> {
+            url
+          },
+          alt
+        },
+        publishedAt,
+        author->{
+          name,
+          slug
+        }
+      }`;
+
       const [tagFaqs, searchFAQsData] = await Promise.allSettled([
-        client.fetch(tagFaqsQuery, { tag: tagName }),
+        client.fetch(tagQuery),
         client.fetch(searchFAQsQuery)
       ]);
 

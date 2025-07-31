@@ -505,8 +505,70 @@ export default function FaqPage({ params }: FaqPageProps) {
 
   const fetchFaqData = async (faqSlug: string) => {
     try {
+      // Use string interpolation to avoid TypeScript parameter issues
+      const faqQueryDynamic = `*[_type == "faq" && slug.current == "${faqSlug}"][0] {
+        _id,
+        question,
+        answer,
+        slug,
+        summaryForAI,
+        alternateQuestions,
+        keywords,
+        category->{
+          _id,
+          title,
+          slug,
+          description
+        },
+        relatedFAQs[]->{
+          _id,
+          question,
+          slug,
+          summaryForAI,
+          image {
+            asset->{
+              _id,
+              url
+            },
+            alt,
+            caption
+          },
+          category->{
+            title,
+            slug
+          }
+        },
+        publishedAt,
+        updatedAt,
+        author->{
+          _id,
+          name,
+          slug,
+          jobTitle,
+          expertise,
+          socialMedia,
+          image {
+            asset->{
+              _id,
+              url
+            },
+            alt
+          }
+        },
+        image {
+          asset->{
+            _id,
+            url
+          },
+          alt,
+          caption
+        },
+        seo,
+        customSchemaMarkup
+      }`;
+
       const [faqData, siteSettingsData, searchFAQsData] = await Promise.allSettled([
-        client.fetch(faqQuery, { slug: faqSlug }),
+        client.fetch(faqQueryDynamic),
         client.fetch(siteSettingsQuery),
         client.fetch(searchFAQsQuery)
       ]);
@@ -521,12 +583,31 @@ export default function FaqPage({ params }: FaqPageProps) {
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
       if (faqData.value.keywords?.length || faqData.value.category) {
-        const related: Faq[] = await client.fetch(relatedQuery, { 
-          currentId: faqData.value._id,
-          categoryRef: faqData.value.category?._id,
-          keywords: faqData.value.keywords || []
-        });
-        setRelatedFaqs(related);
+        const keywordsFilter = faqData.value.keywords?.length 
+          ? `count((keywords[])[@ in [${faqData.value.keywords.map(k => `"${k}"`).join(', ')}]]) > 0` 
+          : 'false';
+        
+        const relatedQueryDynamic = `*[_type == "faq" && _id != "${faqData.value._id}" && (category._ref == "${faqData.value.category?._id || ''}" || ${keywordsFilter})][0...3] {
+          _id,
+          question,
+          slug,
+          summaryForAI,
+          image {
+            asset->{
+              _id,
+              url
+            },
+            alt,
+            caption
+          },
+          category->{
+            title,
+            slug
+          }
+        }`;
+
+        const related = await client.fetch(relatedQueryDynamic);
+        setRelatedFaqs(related || []);
       }
       
       setLoading(false);
