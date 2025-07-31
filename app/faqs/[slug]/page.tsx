@@ -584,7 +584,7 @@ export default function FaqPage({ params }: FaqPageProps) {
       
       if (faqData.value.keywords?.length || faqData.value.category) {
         const keywordsFilter = faqData.value.keywords?.length 
-          ? `count((keywords[])[@ in [${faqData.value.keywords.map(k => `"${k}"`).join(', ')}]]) > 0` 
+          ? `count((keywords[])[@ in [${faqData.value.keywords.map((k: string) => `"${k}"`).join(', ')}]]) > 0` 
           : 'false';
         
         const relatedQueryDynamic = `*[_type == "faq" && _id != "${faqData.value._id}" && (category._ref == "${faqData.value.category?._id || ''}" || ${keywordsFilter})][0...3] {
