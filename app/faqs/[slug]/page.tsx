@@ -84,6 +84,17 @@ interface SiteSettings {
   }
 }
 
+// Type for query parameters
+interface FaqQueryParams {
+  slug: string;
+}
+
+interface RelatedQueryParams {
+  currentId: string;
+  categoryRef?: string;
+  keywords: string[];
+}
+
 // Enhanced queries with proper image asset references
 const faqQuery = groq`*[_type == "faq" && slug.current == $slug][0] {
   _id,

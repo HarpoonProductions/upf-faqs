@@ -37,6 +37,11 @@ interface SearchFAQ {
   summaryForAI?: string;
 }
 
+// Type for query parameters
+interface TagQueryParams {
+  tag: string;
+}
+
 // Query to get FAQs by tag/keyword
 const tagFaqsQuery = groq`*[_type == "faq" && $tag in keywords[] && defined(slug.current)] | order(publishedAt desc, _createdAt desc) {
   _id,
@@ -59,11 +64,6 @@ const tagFaqsQuery = groq`*[_type == "faq" && $tag in keywords[] && defined(slug
     slug
   }
 }`;
-
-// Type for query parameters
-interface TagQueryParams {
-  tag: string;
-}
 
 // Search FAQs query for the search box
 const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && defined(question)] {

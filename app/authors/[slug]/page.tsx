@@ -52,6 +52,15 @@ interface SearchFAQ {
   summaryForAI?: string;
 }
 
+// Type for query parameters
+interface AuthorQueryParams {
+  slug: string;
+}
+
+interface AuthorFaqsQueryParams {
+  authorId: string;
+}
+
 // Query to get author details
 const authorQuery = groq`*[_type == "author" && slug.current == $slug][0] {
   _id,
@@ -88,15 +97,6 @@ const authorFaqsQuery = groq`*[_type == "faq" && author._ref == $authorId && def
   },
   publishedAt
 }`;
-
-// Type for query parameters
-interface AuthorQueryParams {
-  slug: string;
-}
-
-interface AuthorFaqsQueryParams {
-  authorId: string;
-}
 
 // Search FAQs query for the search box
 const searchFAQsQuery = groq`*[_type == "faq" && defined(slug.current) && defined(question)] {
