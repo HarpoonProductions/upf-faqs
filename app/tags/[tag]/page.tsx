@@ -256,8 +256,8 @@ export default function TagPage({ params }: TagPageProps) {
   const fetchTagData = async (tagName: string) => {
     try {
       const [tagFaqs, searchFAQsData] = await Promise.allSettled([
-        client.fetch<FAQ[]>(tagFaqsQuery, { tag: tagName } as TagQueryParams),
-        client.fetch<SearchFAQ[]>(searchFAQsQuery)
+        client.fetch(tagFaqsQuery, { tag: tagName }),
+        client.fetch(searchFAQsQuery)
       ]);
 
       if (tagFaqs.status === 'fulfilled') {

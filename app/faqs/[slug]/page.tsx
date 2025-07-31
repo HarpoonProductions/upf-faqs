@@ -29,6 +29,7 @@ interface Author {
 }
 
 interface Category {
+  _id: string
   title: string
   slug: { current: string }
   description?: string
@@ -505,9 +506,9 @@ export default function FaqPage({ params }: FaqPageProps) {
   const fetchFaqData = async (faqSlug: string) => {
     try {
       const [faqData, siteSettingsData, searchFAQsData] = await Promise.allSettled([
-        client.fetch<Faq>(faqQuery, { slug: faqSlug } as FaqQueryParams),
-        client.fetch<SiteSettings>(siteSettingsQuery),
-        client.fetch<SearchFAQ[]>(searchFAQsQuery)
+        client.fetch(faqQuery, { slug: faqSlug }),
+        client.fetch(siteSettingsQuery),
+        client.fetch(searchFAQsQuery)
       ]);
 
       if (faqData.status !== 'fulfilled' || !faqData.value) {
@@ -520,11 +521,11 @@ export default function FaqPage({ params }: FaqPageProps) {
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
       if (faqData.value.keywords?.length || faqData.value.category) {
-        const related: Faq[] = await client.fetch<Faq[]>(relatedQuery, { 
+        const related: Faq[] = await client.fetch(relatedQuery, { 
           currentId: faqData.value._id,
           categoryRef: faqData.value.category?._id,
           keywords: faqData.value.keywords || []
-        } as RelatedQueryParams);
+        });
         setRelatedFaqs(related);
       }
       

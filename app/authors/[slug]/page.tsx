@@ -283,8 +283,8 @@ export default function AuthorPage({ params }: AuthorPageProps) {
   const fetchAuthorData = async (authorSlug: string) => {
     try {
       const [authorData, searchFAQsData] = await Promise.allSettled([
-        client.fetch<Author>(authorQuery, { slug: authorSlug } as AuthorQueryParams),
-        client.fetch<SearchFAQ[]>(searchFAQsQuery)
+        client.fetch(authorQuery, { slug: authorSlug }),
+        client.fetch(searchFAQsQuery)
       ]);
 
       if (authorData.status !== 'fulfilled' || !authorData.value) {
@@ -296,9 +296,9 @@ export default function AuthorPage({ params }: AuthorPageProps) {
       setSearchFAQs(searchFAQsData.status === 'fulfilled' ? searchFAQsData.value || [] : []);
       
       // Fetch author's FAQs
-      const authorFaqs = await client.fetch<FAQ[]>(authorFaqsQuery, { 
+      const authorFaqs = await client.fetch(authorFaqsQuery, { 
         authorId: authorData.value._id
-      } as AuthorFaqsQueryParams);
+      });
       setFaqs(authorFaqs || []);
       
       setLoading(false);
